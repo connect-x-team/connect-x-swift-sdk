@@ -40,13 +40,13 @@ public class ConnectXMobileSdk {
         self.userAgent = "\(appName)/\(appVersion) (\(osName); \(osVersion))"
         
         // Fetch initial cookie
-        fetchCookie { cookieValue in
+        getUnknownId { cookieValue in
             self.cookie = cookieValue ?? ""
         }
     }
     
     // MARK: - Fetch Cookie
-    private func fetchCookie(completion: @escaping (String?) -> Void) {
+    public func getUnknownId(completion: @escaping (String?) -> Void) {
         guard let url = URL(string: generateCookieUrl) else {
             completion(nil)
             return
@@ -100,7 +100,7 @@ public class ConnectXMobileSdk {
     }
     
     // MARK: - Generic Post Request
-    private func cxPost(endpoint: String, data: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
+    private func cxPost(endpoint: String, data: Any, completion: @escaping (Bool, Error?) -> Void) {
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
             completion(false, NSError(domain: "ConnectXMobileSdk", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL."]))
             return
@@ -162,7 +162,7 @@ public class ConnectXMobileSdk {
         cxPost(endpoint: "/webtracking/dropformOpenTicket", data: ticketData, completion: completion)
     }
     
-    public func cxCreateObject(objectName: String, bodies: [[String: Any]], completion: @escaping (Bool, Error?) -> Void) {
-        cxPost(endpoint: "/object/\(objectName)/composite", data: ["bodies": bodies], completion: completion)
+    public func cxCreateRecord(objectName: String, bodies: [[String: Any]], completion: @escaping (Bool, Error?) -> Void) {
+        cxPost(endpoint: "/object/\(objectName)/composite", data: bodies, completion: completion)
     }
 }
