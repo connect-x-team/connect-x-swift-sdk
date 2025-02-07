@@ -3,12 +3,13 @@
 
 import Foundation
 import UIKit
+import Network
 
 public class ConnectXMobileSdk {
     public static let shared = ConnectXMobileSdk()
     
-    private let apiDomain = "https://connect-x-poon-beta-2-4a43443547d7.herokuapp.com/connectx/api"
-    private let generateCookieUrl = "https://connect-x-poon-beta-2-4a43443547d7.herokuapp.com/connectx/api/webtracking/generateCookie"
+    private let generateCookieUrl = "https://backend.connect-x.tech/connectx/api/webtracking/generateCookie"
+    private let apiDomain = "https://backend.connect-x.tech/connectx/api"
     
     private var token: String = ""
     private var organizeId: String = ""
@@ -43,6 +44,135 @@ public class ConnectXMobileSdk {
         getUnknownId { cookieValue in
             self.cookie = cookieValue ?? ""
         }
+    }
+    
+    private func getDeviceType() -> String {
+        #if targetEnvironment(macCatalyst)
+        return "laptop"
+        #else
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            return "mobile"
+        case .pad:
+            return "tablet"
+        default:
+            return "unknown"
+        }
+        #endif
+    }
+    
+    func getNetworkType(completion: @escaping (String) -> Void) {
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue.global(qos: .background)
+        
+        monitor.pathUpdateHandler = { path in
+            if path.usesInterfaceType(.wifi) {
+                completion("wifi")
+            } else if path.usesInterfaceType(.cellular) {
+                completion("cellular")
+            } else {
+                completion("other")
+            }
+            monitor.cancel() // Stop monitoring after detecting network type
+        }
+        
+        monitor.start(queue: queue)
+    }
+    
+    private func mapDeviceIdentifierToProductName(identifier: String) -> String {
+        switch identifier {
+        // iPhone Models
+        case "iPhone1,1": return "iPhone 2G"
+        case "iPhone1,2": return "iPhone 3G/3GS"
+        case "iPhone2,1": return "iPhone 4"
+        case "iPhone3,1", "iPhone3,2", "iPhone3,3": return "iPhone 4S"
+        case "iPhone4,1": return "iPhone 5"
+        case "iPhone5,1", "iPhone5,2": return "iPhone 5C"
+        case "iPhone5,3", "iPhone5,4": return "iPhone 5S"
+        case "iPhone6,1", "iPhone6,2": return "iPhone 6"
+        case "iPhone7,1": return "iPhone 6 Plus"
+        case "iPhone7,2": return "iPhone 6S"
+        case "iPhone8,1": return "iPhone 6S Plus"
+        case "iPhone8,2": return "iPhone 7"
+        case "iPhone8,4": return "iPhone SE (1st generation)"
+        case "iPhone9,1", "iPhone9,3": return "iPhone 7 Plus"
+        case "iPhone9,2", "iPhone9,4": return "iPhone 8"
+        case "iPhone10,1", "iPhone10,4": return "iPhone 8 Plus"
+        case "iPhone10,2", "iPhone10,5": return "iPhone X"
+        case "iPhone10,3", "iPhone10,6": return "iPhone X"
+        case "iPhone11,2": return "iPhone XS"
+        case "iPhone11,4", "iPhone11,6": return "iPhone XS Max"
+        case "iPhone11,8": return "iPhone XR"
+        case "iPhone12,1": return "iPhone 11"
+        case "iPhone12,3": return "iPhone 11 Pro"
+        case "iPhone12,5": return "iPhone 11 Pro Max"
+        case "iPhone13,1": return "iPhone 12 Mini"
+        case "iPhone13,2": return "iPhone 12"
+        case "iPhone13,3": return "iPhone 12 Pro"
+        case "iPhone13,4": return "iPhone 12 Pro Max"
+        case "iPhone14,4": return "iPhone 13 Mini"
+        case "iPhone14,5": return "iPhone 13"
+        case "iPhone14,2": return "iPhone 13 Pro"
+        case "iPhone14,3": return "iPhone 13 Pro Max"
+        case "iPhone14,7": return "iPhone 14"
+        case "iPhone14,8": return "iPhone 14 Plus"
+        case "iPhone15,2": return "iPhone 14 Pro"
+        case "iPhone15,3": return "iPhone 14 Pro Max"
+        
+        // iPad Models
+        case "iPad1,1": return "iPad 1st generation"
+        case "iPad2,1", "iPad2,2", "iPad2,3", "iPad2,4": return "iPad 2"
+        case "iPad3,1", "iPad3,2", "iPad3,3": return "iPad 3rd generation"
+        case "iPad3,4", "iPad3,5", "iPad3,6": return "iPad 4th generation"
+        case "iPad6,11", "iPad6,12": return "iPad 5th generation"
+        case "iPad7,5", "iPad7,6": return "iPad 6th generation"
+        case "iPad7,11", "iPad7,12": return "iPad 7th generation"
+        case "iPad8,1", "iPad8,2", "iPad8,3", "iPad8,4": return "iPad Pro (11-inch) 1st generation"
+        case "iPad8,9", "iPad8,10": return "iPad Pro (11-inch) 2nd generation"
+        case "iPad8,5", "iPad8,6", "iPad8,7": return "iPad Pro (12.9-inch) 3rd generation"
+        case "iPad8,11", "iPad8,12": return "iPad Pro (12.9-inch) 4th generation"
+        case "iPad11,1", "iPad11,2": return "iPad Mini 5th generation"
+        case "iPad11,3", "iPad11,4": return "iPad Air 3rd generation"
+        case "iPad13,1", "iPad13,2": return "iPad Air 4th generation"
+        case "iPad13,4", "iPad13,5", "iPad13,6", "iPad13,7": return "iPad Pro (11-inch) 3rd generation"
+        case "iPad13,8", "iPad13,9": return "iPad Pro (12.9-inch) 5th generation"
+        
+        // iPod Models
+        case "iPod1,1": return "iPod Touch 1st generation"
+        case "iPod2,1": return "iPod Touch 2nd generation"
+        case "iPod3,1": return "iPod Touch 3rd generation"
+        case "iPod4,1": return "iPod Touch 4th generation"
+        case "iPod5,1": return "iPod Touch 5th generation"
+        case "iPod7,1": return "iPod Touch 6th generation"
+        case "iPod9,1": return "iPod Touch 7th generation"
+        
+        // Apple Watch Models
+        case "Watch1,1", "Watch1,2": return "Apple Watch 1st generation"
+        case "Watch2,6", "Watch2,7": return "Apple Watch Series 1"
+        case "Watch2,3", "Watch2,4": return "Apple Watch Series 2"
+        case "Watch3,1", "Watch3,2", "Watch3,3", "Watch3,4": return "Apple Watch Series 3"
+        case "Watch4,1", "Watch4,2", "Watch4,3", "Watch4,4": return "Apple Watch Series 4"
+        case "Watch5,1", "Watch5,2", "Watch5,3", "Watch5,4": return "Apple Watch Series 5"
+        case "Watch6,1", "Watch6,2", "Watch6,3", "Watch6,4": return "Apple Watch Series 6"
+        case "Watch7,1", "Watch7,2", "Watch7,3", "Watch7,4": return "Apple Watch Series 7"
+        case "Watch8,1", "Watch8,2", "Watch8,3", "Watch8,4": return "Apple Watch Series 8"
+        
+        // Default case if the identifier is unknown
+        default: return "Unknown Device"
+        }
+    }
+    
+    private func getDeviceProductName() -> String? {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+
+        return mapDeviceIdentifierToProductName(identifier: identifier)
     }
     
     // MARK: - Fetch Cookie
@@ -80,6 +210,12 @@ public class ConnectXMobileSdk {
         let osVersion = UIDevice.current.systemVersion
         let device = UIDevice.current.model
         
+        var network = ""
+        
+        getNetworkType { networkType in
+            network = networkType
+        }
+        
         return [
             "cx_isBrowser": false,
             "cx_language": language,
@@ -91,10 +227,19 @@ public class ConnectXMobileSdk {
             "cx_source": Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "UnknownApp",
             "cx_type": "Mobile App",
             "cx_fingerprint": UUID().uuidString,
+            "cx_deviceId" : UUID().uuidString,
+            "cx_deviceType": getDeviceType(),
+            "cx_networkType":network,
             "os": osName,
             "osVersion": osVersion,
             "device": device,
-            "cx_cookie": cookie,
+//            "cx_cookie": cookie,
+            "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
+            "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
+            "cx_libraryVersion":  "0.0.1",
+            "cx_libraryPlatform": "Swift",
+            "cx_device": getDeviceProductName() ?? "Unknown",
+            "cx_deviceManufacturer": "Apple",
             "cx_timespent": Int(Date().timeIntervalSince(appStartTime))
         ]
     }
@@ -139,21 +284,32 @@ public class ConnectXMobileSdk {
         cxPost(endpoint: "/webtracking", data: requestBody, completion: completion)
     }
     
-    public func cxIdentify(key: String, customers: [String: Any], tracking: [String: Any], form: [String: Any]?, options: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
-        var trackingData = tracking
-        trackingData.merge(getClientData()) { _, new in new }
+    public func cxIdentify(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
+        // Get tracking data from the body
+        var trackingData = body["tracking"] as? [String: Any] ?? [:]
+        
+        // Get client data (assuming getClientData() returns a dictionary)
+        let clientData = getClientData()
+        
+        // Merge client data with tracking data
+        trackingData.merge(clientData) { _, new in new }
+        
+        // Add organizeId to tracking data
         trackingData["organizeId"] = organizeId
         
+        // Prepare request body
         let requestBody: [String: Any] = [
-            "key": key,
-            "customers": customers,
+            "key": body["key"]!,
+            "customers": body["customers"]!,
             "tracking": trackingData,
-            "form": form ?? [:],
-            "options": options
+            "form": body["form"] ?? [:],
+            "options": body["options"] ?? [:]
         ]
         
+        // Send request using cxPost method
         cxPost(endpoint: "/webtracking/dropform", data: requestBody, completion: completion)
     }
+
     
     public func cxOpenTicket(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
         var ticketData = body
