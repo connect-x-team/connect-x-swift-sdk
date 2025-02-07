@@ -206,45 +206,42 @@ public class ConnectXMobileSdk {
     }
     
     // MARK: - Get Client Data
-    private func getClientData() -> [String: Any] {
+    private func getClientData(completion: @escaping ([String: Any]) -> Void) {
         let language = Locale.current.languageCode ?? "en"
         let osName = UIDevice.current.systemName
         let osVersion = UIDevice.current.systemVersion
         let device = UIDevice.current.model
-        
-        var network: [String: String]?
-        
+
         getNetworkType { networkType in
-            network = networkType
+            let clientData: [String: Any] = [
+                "cx_isBrowser": false,
+                "cx_language": language,
+                "cx_browserName": "",
+                "cx_browserVersion": "",
+                "cx_engineName": "Swift",
+                "cx_engineVersion": osVersion,
+                "cx_userAgent": self.userAgent,
+                "cx_source": Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "UnknownApp",
+                "cx_type": "Mobile App",
+                "cx_fingerprint": UUID().uuidString,
+                "cx_deviceId": UUID().uuidString,
+                "cx_deviceType": self.getDeviceType(),
+                "cx_networkType": networkType, // Now this will work
+                "os": osName,
+                "osVersion": osVersion,
+                "device": device,
+                "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
+                "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
+                "cx_libraryVersion": "0.0.6",
+                "cx_libraryPlatform": "Swift",
+                "cx_device": self.getDeviceProductName() ?? "Unknown",
+                "cx_deviceManufacturer": "Apple",
+                "cx_timespent": Int(Date().timeIntervalSince(self.appStartTime))
+            ]
+            completion(clientData)
         }
-        
-        return [
-            "cx_isBrowser": false,
-            "cx_language": language,
-            "cx_browserName": "",
-            "cx_browserVersion": "",
-            "cx_engineName": "Swift",
-            "cx_engineVersion": osVersion,
-            "cx_userAgent": userAgent,
-            "cx_source": Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "UnknownApp",
-            "cx_type": "Mobile App",
-            "cx_fingerprint": UUID().uuidString,
-            "cx_deviceId" : UUID().uuidString,
-            "cx_deviceType": getDeviceType(),
-            "cx_networkType":network ?? "Unkown",
-            "os": osName,
-            "osVersion": osVersion,
-            "device": device,
-//            "cx_cookie": cookie,
-            "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
-            "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
-            "cx_libraryVersion":  "0.0.6",
-            "cx_libraryPlatform": "Swift",
-            "cx_device": getDeviceProductName() ?? "Unknown",
-            "cx_deviceManufacturer": "Apple",
-            "cx_timespent": Int(Date().timeIntervalSince(appStartTime))
-        ]
     }
+
     
     // MARK: - Generic Post Request
     private func cxPost(endpoint: String, data: Any, completion: @escaping (Bool, Error?) -> Void) {
@@ -278,38 +275,39 @@ public class ConnectXMobileSdk {
     
     // MARK: - Public API Methods
     public func cxTracking(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
-        let clientData = getClientData()
-        var requestBody = body
-        requestBody["organizeId"] = organizeId
-        requestBody.merge(clientData) { _, new in new }
         
-        cxPost(endpoint: "/webtracking", data: requestBody, completion: completion)
+        getClientData { clientData in
+            var requestBody = body
+            requestBody["organizeId"] = self.organizeId
+            requestBody.merge(clientData) { _, new in new }
+            
+            self.cxPost(endpoint: "/webtracking", data: requestBody, completion: completion)
+        }
     }
     
     public func cxIdentify(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
         // Get tracking data from the body
         var trackingData = body["tracking"] as? [String: Any] ?? [:]
         
-        // Get client data (assuming getClientData() returns a dictionary)
-        let clientData = getClientData()
-        
-        // Merge client data with tracking data
-        trackingData.merge(clientData) { _, new in new }
-        
-        // Add organizeId to tracking data
-        trackingData["organizeId"] = organizeId
-        
-        // Prepare request body
-        let requestBody: [String: Any] = [
-            "key": body["key"]!,
-            "customers": body["customers"]!,
-            "tracking": trackingData,
-            "form": body["form"] ?? [:],
-            "options": body["options"] ?? [:]
-        ]
-        
-        // Send request using cxPost method
-        cxPost(endpoint: "/webtracking/dropform", data: requestBody, completion: completion)
+        getClientData { clientData in
+            // Merge client data with tracking data
+            trackingData.merge(clientData) { _, new in new }
+            
+            // Add organizeId to tracking data
+            trackingData["organizeId"] = self.organizeId
+            
+            // Prepare request body
+            let requestBody: [String: Any] = [
+                "key": body["key"]!,
+                "customers": body["customers"]!,
+                "tracking": trackingData,
+                "form": body["form"] ?? [:],
+                "options": body["options"] ?? [:]
+            ]
+            
+            // Send request using cxPost method
+            self.cxPost(endpoint: "/webtracking/dropform", data: requestBody, completion: completion)
+        }
     }
 
     
