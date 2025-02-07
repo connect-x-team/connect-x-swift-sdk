@@ -223,8 +223,8 @@ public class ConnectXMobileSdk {
                 "cx_userAgent": self.userAgent,
                 "cx_source": Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "UnknownApp",
                 "cx_type": "Mobile App",
-                "cx_fingerprint": UUID().uuidString,
-                "cx_deviceId": UUID().uuidString,
+                "cx_fingerprint": UIDevice.current.identifierForVendor?.uuidString as Any,
+                "cx_deviceId": UIDevice.current.identifierForVendor?.uuidString as Any,
                 "cx_deviceType": self.getDeviceType(),
                 "cx_networkType": networkType, // Now this will work
                 "os": osName,
