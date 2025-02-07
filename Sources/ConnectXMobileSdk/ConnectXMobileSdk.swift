@@ -238,7 +238,7 @@ public class ConnectXMobileSdk {
 //            "cx_cookie": cookie,
             "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
             "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
-            "cx_libraryVersion":  "0.0.5",
+            "cx_libraryVersion":  "0.0.6",
             "cx_libraryPlatform": "Swift",
             "cx_device": getDeviceProductName() ?? "Unknown",
             "cx_deviceManufacturer": "Apple",
