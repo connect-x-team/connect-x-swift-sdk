@@ -48,34 +48,36 @@ public class ConnectXMobileSdk {
     
     private func getDeviceType() -> String {
         #if targetEnvironment(macCatalyst)
-        return "laptop"
+        return "Laptop"
         #else
         switch UIDevice.current.userInterfaceIdiom {
         case .phone:
-            return "mobile"
+            return "Mobile"
         case .pad:
-            return "tablet"
+            return "Tablet"
         default:
-            return "unknown"
+            return "Unknown"
         }
         #endif
     }
     
-    func getNetworkType(completion: @escaping (String) -> Void) {
+    func getNetworkType(completion: @escaping ([String: String]) -> Void) {
         let monitor = NWPathMonitor()
         let queue = DispatchQueue.global(qos: .background)
-        
+
         monitor.pathUpdateHandler = { path in
+            var networkType: [String: String] = ["label": "Other", "value": "other"]
+
             if path.usesInterfaceType(.wifi) {
-                completion("wifi")
+                networkType = ["label": "WiFi", "value": "wifi"]
             } else if path.usesInterfaceType(.cellular) {
-                completion("cellular")
-            } else {
-                completion("other")
+                networkType = ["label": "Cellular", "value": "cellular"]
             }
+
+            completion(networkType)
             monitor.cancel() // Stop monitoring after detecting network type
         }
-        
+
         monitor.start(queue: queue)
     }
     
@@ -210,7 +212,7 @@ public class ConnectXMobileSdk {
         let osVersion = UIDevice.current.systemVersion
         let device = UIDevice.current.model
         
-        var network = ""
+        var network: [String: String]?
         
         getNetworkType { networkType in
             network = networkType
@@ -229,7 +231,7 @@ public class ConnectXMobileSdk {
             "cx_fingerprint": UUID().uuidString,
             "cx_deviceId" : UUID().uuidString,
             "cx_deviceType": getDeviceType(),
-            "cx_networkType":network,
+            "cx_networkType":network ?? "Unkown",
             "os": osName,
             "osVersion": osVersion,
             "device": device,
