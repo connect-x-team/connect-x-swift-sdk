@@ -322,7 +322,7 @@ public class ConnectXMobileSdk {
             if var tracking = ticketData["tracking"] as? [String: Any] {
                 tracking["organizeId"] = self.organizeId
                 tracking.merge(clientData) { _, new in new }
-                ticketData["ticket"] = tracking
+                ticketData["tracking"] = tracking
             }
             
             // Send request using cxPost method
