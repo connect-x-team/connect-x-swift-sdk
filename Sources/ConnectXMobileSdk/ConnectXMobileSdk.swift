@@ -313,9 +313,21 @@ public class ConnectXMobileSdk {
     
     public func cxOpenTicket(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
         var ticketData = body
-        ticketData["organizeId"] = organizeId
+        if var ticket = ticketData["ticket"] as? [String: Any] {
+            ticket["organizeId"] = organizeId
+            ticketData["ticket"] = ticket
+        }
         
-        cxPost(endpoint: "/webtracking/dropformOpenTicket", data: ticketData, completion: completion)
+        getClientData { clientData in
+            if var tracking = ticketData["tracking"] as? [String: Any] {
+                tracking["organizeId"] = self.organizeId
+                tracking.merge(clientData) { _, new in new }
+                ticketData["ticket"] = tracking
+            }
+            
+            // Send request using cxPost method
+            self.cxPost(endpoint: "/webtracking/dropformOpenTicket", data: ticketData, completion: completion)
+        }
     }
     
     public func cxCreateRecord(objectName: String, bodies: [[String: Any]], completion: @escaping (Bool, Error?) -> Void) {
