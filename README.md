@@ -1,2 +1,2 @@
 TODO read me
-# connect-x-kotlin-sdk
+# connect-x-swift-sdk
