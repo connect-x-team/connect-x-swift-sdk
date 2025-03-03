@@ -31,7 +31,7 @@ In Xcode: Go to File → Add Packages -> Enter the repository URL -> Select the 
 OR
 
 ```bash
-.package(url: "https://github.com/connect-x-team/connect-x-swift-sdk.git", from: "LIBRARY_VERSION")
+.package(url: "https://github.com/connect-x-team/connect-x-swift-sdk.git", from: "x.x.x")
 ```
 
 Install with a Swift Package Manager manifest
