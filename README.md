@@ -58,7 +58,11 @@ ConnectXMobileSdk.shared.initialize(token: "YOUR_API_TOKEN", organizeId: "YOUR_O
 ### 3. Track Events
 
 ```swift
-let eventBody: [String: Any] = ["cx_title": "YOUR_EVENT_NAME", "cx_event": "YOUR_EVENT", "cx_type": "YOUR_TYPE"] // ... Other Activity Field
+let eventBody: [String: Any] = [
+    "cx_title": "YOUR_EVENT_NAME", 
+    "cx_event": "YOUR_EVENT", 
+    "cx_type": "YOUR_TYPE"
+] // ... Other Activity Field
 ConnectXMobileSdk.shared.cxTracking(body: eventBody) { success, error in
     if success {
         print("Tracking event sent successfully.")
@@ -84,7 +88,7 @@ ConnectXMobileSdk.shared.cxIdentify(
         "tracking": [ // Optional
             "cx_title": "YOUR_EVENT_NAME", 
             "cx_event": "YOUR_EVENT", 
-            "cx_type": "YOUR_TYPE
+            "cx_type": "YOUR_TYPE"
             // ... Other Activity Field
         ],
         "form": [ // Optional
@@ -105,7 +109,7 @@ ConnectXMobileSdk.shared.cxIdentify(
                 "weight": 55
             ]
         ]
-    ]) { success, error in
+]) { success, error in
     if success {
         print("Identify event sent successfully.")
     } else if let error = error {
@@ -162,7 +166,7 @@ ConnectXMobileSdk.shared.cxOpenTicket(body: [
 To create a new custom object, you must generate a unique referenceId to identify the record. If you pass a docId, the object is updated instead of being created.
 
 ```swift
-ConnectXMobileSdk.shared.cxCreateRecord(objectName: objectName, bodies: [ limit 200 rows
+ConnectXMobileSdk.shared.cxCreateRecord(objectName: objectName, bodies: [ // limit 200 rows
     [
         "attributes": ["referenceId": "UNIQUE_ID"], Replace with your unique ID generation logic
         "cx_Name": cxName,
