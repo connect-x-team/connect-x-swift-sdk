@@ -161,7 +161,7 @@ ConnectXMobileSdk.shared.cxOpenTicket(body: [
 }
 ```
 
-### 6. Create or Update Custom Objects
+### 6. Create or Update Custom Records
 
 To create a new custom object, you must generate a unique referenceId to identify the record. If you pass a docId, the object is updated instead of being created.
 
