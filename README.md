@@ -26,7 +26,7 @@ Run the following command to add the package to your project:
 https://github.com/connect-x-team/connect-x-swift-sdk.git
 ```
 
-Go to File → Add Packages -> Enter the repository URL -> Select the latest version and click Add Package
+In Xcode: Go to File → Add Packages -> Enter the repository URL -> Select the latest version and click Add Package
 
 OR
 
