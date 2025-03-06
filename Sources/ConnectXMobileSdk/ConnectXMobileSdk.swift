@@ -5,8 +5,8 @@ import Foundation
 import UIKit
 import Network
 
-public class ConnectXMobileSdk {
-    public static let shared = ConnectXMobileSdk()
+public class ConnectXManager {
+    public static let shared = ConnectXManager()
     
     private let generateCookieUrl = "https://backend.connect-x.tech/connectx/api/webtracking/generateCookie"
     private let apiDomain = "https://backend.connect-x.tech/connectx/api"
@@ -227,12 +227,12 @@ public class ConnectXMobileSdk {
                 "cx_deviceId": UIDevice.current.identifierForVendor?.uuidString as Any,
                 "cx_deviceType": self.getDeviceType(),
                 "cx_networkType": networkType, // Now this will work
-                "os": osName,
-                "osVersion": osVersion,
+                "cx_os": osName,
+                "cx_osVersion": osVersion,
                 "device": device,
                 "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
                 "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
-                "cx_libraryVersion": "0.0.6",
+                "cx_libraryVersion": "1.0.9",
                 "cx_libraryPlatform": "Swift",
                 "cx_device": self.getDeviceProductName() ?? "Unknown",
                 "cx_deviceManufacturer": "Apple",
