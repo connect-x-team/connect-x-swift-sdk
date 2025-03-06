@@ -52,7 +52,7 @@ Note: You can generate the YOUR_API_TOKEN from [Connect-X](https://app.connect-x
 Organization Settings → SDK Tracking.
 
 ```swift
-ConnectXMobileSdk.shared.initialize(token: "YOUR_API_TOKEN", organizeId: "YOUR_ORGANIZE_ID")
+ConnectXManager.shared.initialize(token: "YOUR_API_TOKEN", organizeId: "YOUR_ORGANIZE_ID")
 ```
 
 ### 3. Track Events
@@ -63,7 +63,7 @@ let eventBody: [String: Any] = [
     "cx_event": "YOUR_EVENT", 
     "cx_type": "YOUR_TYPE"
 ] // ... Other Activity Field
-ConnectXMobileSdk.shared.cxTracking(body: eventBody) { success, error in
+ConnectXManager.shared.cxTracking(body: eventBody) { success, error in
     if success {
         print("Tracking event sent successfully.")
     } else if let error = error {
@@ -75,7 +75,7 @@ ConnectXMobileSdk.shared.cxTracking(body: eventBody) { success, error in
 ### 4. Create Customer
 
 ```swift
-ConnectXMobileSdk.shared.cxIdentify(
+ConnectXManager.shared.cxIdentify(
     body: [
         "key": "cx_email", 
         "customers": [
@@ -121,7 +121,7 @@ ConnectXMobileSdk.shared.cxIdentify(
 ### 5. Open Ticket
 
 ```swift
-ConnectXMobileSdk.shared.cxOpenTicket(body: [
+ConnectXManager.shared.cxOpenTicket(body: [
     "key": "cx_Name",
     "customers": [
         "cx_Name": name,
@@ -166,7 +166,7 @@ ConnectXMobileSdk.shared.cxOpenTicket(body: [
 To create a new custom object, you must generate a unique referenceId to identify the record. If you pass a docId, the object is updated instead of being created.
 
 ```swift
-ConnectXMobileSdk.shared.cxCreateRecord(objectName: objectName, bodies: [ // limit 200 rows
+ConnectXManager.shared.cxCreateRecord(objectName: objectName, bodies: [ // limit 200 rows
     [
         "attributes": ["referenceId": "UNIQUE_ID"], Replace with your unique ID generation logic
         "cx_Name": cxName,
@@ -186,7 +186,7 @@ ConnectXMobileSdk.shared.cxCreateRecord(objectName: objectName, bodies: [ // lim
 This method generates and returns a unique identifier.
 
 ```swift
-ConnectXMobileSdk.shared.getUnknownId { cookie in
+ConnectXManager.shared.getUnknownId { cookie in
     if let cookie = cookie {
         print("Received cookie: \(cookie)")
     } else {

@@ -232,7 +232,7 @@ public class ConnectXManager {
                 "device": device,
                 "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
                 "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
-                "cx_libraryVersion": "1.0.9",
+                "cx_libraryVersion": "1.0.3",
                 "cx_libraryPlatform": "Swift",
                 "cx_device": self.getDeviceProductName() ?? "Unknown",
                 "cx_deviceManufacturer": "Apple",
