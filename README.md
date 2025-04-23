@@ -52,7 +52,11 @@ Note: You can generate the YOUR_API_TOKEN from [Connect-X](https://app.connect-x
 Organization Settings → SDK Tracking.
 
 ```swift
-ConnectXManager.shared.initialize(token: "YOUR_API_TOKEN", organizeId: "YOUR_ORGANIZE_ID")
+ConnectXManager.shared.initialize(
+    token: "YOUR_API_TOKEN",
+    organizeId: "YOUR_ORGANIZE_ID",
+    env: "YOUR_ENV" //optional
+    )
 ```
 
 ### 3. Track Events

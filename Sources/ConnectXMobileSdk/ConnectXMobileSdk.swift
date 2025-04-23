@@ -8,8 +8,8 @@ import Network
 public class ConnectXManager {
     public static let shared = ConnectXManager()
     
-    private let generateCookieUrl = "https://backend.connect-x.tech/connectx/api/webtracking/generateCookie"
-    private let apiDomain = "https://backend.connect-x.tech/connectx/api"
+    private var generateCookieUrl = "https://backend.connect-x.tech/connectx/api/webtracking/generateCookie"
+    private var apiDomain = "https://backend.connect-x.tech/connectx/api"
     
     private var token: String = ""
     private var organizeId: String = ""
@@ -20,7 +20,7 @@ public class ConnectXManager {
     private init() {}
     
     // MARK: - Initialization
-    public func initialize(token: String, organizeId: String) throws {
+    public func initialize(token: String, organizeId: String, env: String? = nil) throws {
         guard !token.isEmpty else {
             throw NSError(domain: "ConnectXMobileSdk", code: 400, userInfo: [NSLocalizedDescriptionKey: "Token must not be empty."])
         }
@@ -31,6 +31,12 @@ public class ConnectXManager {
         
         self.token = token
         self.organizeId = organizeId
+        // If subdomain is passed, override the URLs
+        if let sub = env, !sub.isEmpty {
+            let base = "https://backend-\(sub).connect-x.tech/connectx/api"
+            self.apiDomain = base
+            self.generateCookieUrl = "\(base)/webtracking/generateCookie"
+        }
         
         // Set user agent
         let osName = UIDevice.current.systemName
@@ -232,7 +238,7 @@ public class ConnectXManager {
                 "device": device,
                 "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
                 "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
-                "cx_libraryVersion": "1.0.3",
+                "cx_libraryVersion": "1.0.4",
                 "cx_libraryPlatform": "Swift",
                 "cx_device": self.getDeviceProductName() ?? "Unknown",
                 "cx_deviceManufacturer": "Apple",
