@@ -261,7 +261,7 @@ public class ConnectXManager {
     
     private func cxPost(endpoint: String, data: Any, completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
-            completion(false, NSError(domain: "ConnectXMobileSdk", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL."]))
+            completion(false, NSError(domain: "ConnectXMobileSdk", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL."]), nil)
             return
         }
         
@@ -273,13 +273,13 @@ public class ConnectXManager {
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
         } catch {
-            completion(false, error)
+            completion(false, error, nil)
             return
         }
         
         let task = URLSession.shared.dataTask(with: request) { _, response, error in
             if let error = error {
-                completion(false, error)
+                completion(false, error, nil)
                 return
             }
             completion(true, nil, response)
