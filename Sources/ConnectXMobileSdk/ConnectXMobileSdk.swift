@@ -259,7 +259,7 @@ public class ConnectXManager {
     }
 
     
-    private func cxPost(endpoint: String, data: Any, completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
+    private func cxPost(endpoint: String, data: Any, completion: @escaping (Bool, Error?, Data?) -> Void) {
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
             completion(false, NSError(domain: "ConnectXMobileSdk", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL."]), nil)
             return
@@ -277,19 +277,19 @@ public class ConnectXManager {
             return
         }
         
-        let task = URLSession.shared.dataTask(with: request) { _, response, error in
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 completion(false, error, nil)
                 return
             }
-            completion(true, nil, response)
+            completion(true, nil, data)
         }
         
         task.resume()
     }
     
     // MARK: - Public API Methods
-    public func cxTracking(body: [String: Any], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
+    public func cxTracking(body: [String: Any], completion: @escaping (Bool, Error?, Data?) -> Void) {
         
         getClientData { clientData in
             var requestBody = body
@@ -300,7 +300,7 @@ public class ConnectXManager {
         }
     }
     
-    public func cxIdentify(body: [String: Any], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
+    public func cxIdentify(body: [String: Any], completion: @escaping (Bool, Error?, Data?) -> Void) {
         // Get tracking data from the body
         var trackingData = body["tracking"] as? [String: Any] ?? [:]
         
@@ -326,7 +326,7 @@ public class ConnectXManager {
     }
 
     
-    public func cxOpenTicket(body: [String: Any], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
+    public func cxOpenTicket(body: [String: Any], completion: @escaping (Bool, Error?, Data?) -> Void) {
         var ticketData = body
         var tracking: [String: Any] = ["organizeId": organizeId]
         if var ticket = ticketData["ticket"] as? [String: Any] {
@@ -342,7 +342,7 @@ public class ConnectXManager {
         }
     }
     
-    public func cxCreateRecord(objectName: String, bodies: [[String: Any]], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
+    public func cxCreateRecord(objectName: String, bodies: [[String: Any]], completion: @escaping (Bool, Error?, Data?) -> Void) {
        cxPost(endpoint: "/object/\(objectName)/composite", data: bodies, completion: completion)
    }
 }
