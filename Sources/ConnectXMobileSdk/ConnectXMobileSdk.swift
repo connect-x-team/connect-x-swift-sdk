@@ -238,7 +238,7 @@ public class ConnectXManager {
                 "device": device,
                 "cx_appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
                 "cx_appBuild": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown",
-                "cx_libraryVersion": "1.0.4",
+                "cx_libraryVersion": "1.0.5",
                 "cx_libraryPlatform": "Swift",
                 "cx_device": self.getDeviceProductName() ?? "Unknown",
                 "cx_deviceManufacturer": "Apple",
@@ -250,10 +250,9 @@ public class ConnectXManager {
 
     
     // MARK: - Generic Post Request
-    private func cxPost(endpoint: String, data: Any, completion: @escaping (Bool, Error?) -> Void) {
+    private func cxPost(endpoint: String, data: Any) async throws -> Data {
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
-            completion(false, NSError(domain: "ConnectXMobileSdk", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL."]))
-            return
+            throw NetworkError.badURL
         }
         
         var request = URLRequest(url: url)
@@ -261,22 +260,22 @@ public class ConnectXManager {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
-        } catch {
-            completion(false, error)
-            return
+        // แปลงข้อมูลที่จะส่ง (body)
+        request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
+        
+        // เรียก API ด้วย async/await
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        
+        // ตรวจสอบ Response และ Status Code
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.badResponse
         }
         
-        let task = URLSession.shared.dataTask(with: request) { _, response, error in
-            if let error = error {
-                completion(false, error)
-                return
-            }
-            completion(true, nil)
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw NetworkError.badStatusCode(httpResponse.statusCode)
         }
         
-        task.resume()
+        return responseData
     }
     
     // MARK: - Public API Methods
@@ -333,7 +332,8 @@ public class ConnectXManager {
         }
     }
     
-    public func cxCreateRecord(objectName: String, bodies: [[String: Any]], completion: @escaping (Bool, Error?) -> Void) {
-        cxPost(endpoint: "/object/\(objectName)/composite", data: bodies, completion: completion)
+    public func cxCreateRecord(objectName: String, bodies: [[String: Any]]) async throws -> Data {
+        let endpoint = "/object/\(objectName)/composite"
+        return try await cxPost(endpoint: endpoint, data: bodies)
     }
 }
