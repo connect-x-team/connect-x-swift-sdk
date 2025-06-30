@@ -5,12 +5,12 @@ import Foundation
 import UIKit
 import Network
 
-enum NetworkError: Error {
-    case badURL
-    case badResponse
-    case badStatusCode(Int)
-    case requestFailed(Error)
-    case decodingError(Error)
+enum ConnectXError: Error {
+    case invalidURL
+    case serializationFailed(Error)
+    case networkRequestFailed(Error)
+    case invalidResponse
+    case invalidStatusCode(Int)
     case noData
 }
 
@@ -259,8 +259,10 @@ public class ConnectXManager {
 
     
     private func cxPost(endpoint: String, data: Any, completion: @escaping (Result<Data, Error>) -> Void) {
+        
+        // 2. ใช้ Error Type ของเราเองเพื่อความชัดเจน
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
-            completion(.failure(NetworkError.badURL))
+            completion(.failure(ConnectXError.invalidURL))
             return
         }
         
@@ -272,33 +274,38 @@ public class ConnectXManager {
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
         } catch {
-            completion(.failure(error)) // ส่ง Error จากการแปลง JSON
+            completion(.failure(ConnectXError.serializationFailed(error)))
             return
         }
         
         let task = URLSession.shared.dataTask(with: request) { responseData, response, error in
-            // ตรวจสอบ error ต่างๆ ตามลำดับ
+            // --- ส่วนของการจัดการผลลัพธ์ที่แก้ไขใหม่ทั้งหมด ---
+            
+            // 3. ตรวจสอบ Network Error ก่อน
             if let error = error {
-                completion(.failure(error)) // Network-level error
+                completion(.failure(ConnectXError.networkRequestFailed(error)))
                 return
             }
             
+            // 4. ตรวจสอบว่า Response เป็น HTTP Response ที่ถูกต้อง
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(NetworkError.badResponse))
+                completion(.failure(ConnectXError.invalidResponse))
                 return
             }
             
+            // 5. ตรวจสอบ Status Code (สำคัญที่สุด!)
             guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(NetworkError.badStatusCode(httpResponse.statusCode)))
+                completion(.failure(ConnectXError.invalidStatusCode(httpResponse.statusCode)))
                 return
             }
             
+            // 6. ตรวจสอบว่ามี Data กลับมาจริง
             guard let responseData = responseData, !responseData.isEmpty else {
-                completion(.failure(NetworkError.noData))
+                completion(.failure(ConnectXError.noData))
                 return
             }
             
-            // ถ้าทุกอย่างผ่านหมด ถือว่าสำเร็จ
+            // 7. ถ้าทุกอย่างถูกต้อง ให้ส่งผลลัพธ์สำเร็จกลับไปพร้อมกับ Data
             completion(.success(responseData))
         }
         
