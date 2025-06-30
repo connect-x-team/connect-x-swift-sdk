@@ -5,6 +5,15 @@ import Foundation
 import UIKit
 import Network
 
+enum NetworkError: Error {
+    case badURL
+    case badResponse
+    case badStatusCode(Int)
+    case requestFailed(Error)
+    case decodingError(Error)
+    case noData
+}
+
 public class ConnectXManager {
     public static let shared = ConnectXManager()
     
@@ -249,10 +258,10 @@ public class ConnectXManager {
     }
 
     
-    // MARK: - Generic Post Request
-    private func cxPost(endpoint: String, data: Any) async throws -> Data {
+    private func cxPost(endpoint: String, data: Any, completion: @escaping (Result<Data, Error>) -> Void) {
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
-            throw NetworkError.badURL
+            completion(.failure(NetworkError.badURL))
+            return
         }
         
         var request = URLRequest(url: url)
@@ -260,22 +269,40 @@ public class ConnectXManager {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        // แปลงข้อมูลที่จะส่ง (body)
-        request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
-        
-        // เรียก API ด้วย async/await
-        let (responseData, response) = try await URLSession.shared.data(for: request)
-        
-        // ตรวจสอบ Response และ Status Code
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.badResponse
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
+        } catch {
+            completion(.failure(error)) // ส่ง Error จากการแปลง JSON
+            return
         }
         
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw NetworkError.badStatusCode(httpResponse.statusCode)
+        let task = URLSession.shared.dataTask(with: request) { responseData, response, error in
+            // ตรวจสอบ error ต่างๆ ตามลำดับ
+            if let error = error {
+                completion(.failure(error)) // Network-level error
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(NetworkError.badResponse))
+                return
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                completion(.failure(NetworkError.badStatusCode(httpResponse.statusCode)))
+                return
+            }
+            
+            guard let responseData = responseData, !responseData.isEmpty else {
+                completion(.failure(NetworkError.noData))
+                return
+            }
+            
+            // ถ้าทุกอย่างผ่านหมด ถือว่าสำเร็จ
+            completion(.success(responseData))
         }
         
-        return responseData
+        task.resume()
     }
     
     // MARK: - Public API Methods
@@ -332,8 +359,8 @@ public class ConnectXManager {
         }
     }
     
-    public func cxCreateRecord(objectName: String, bodies: [[String: Any]]) async throws -> Data {
+    public func cxCreateRecord<ResponseModel: Decodable>(objectName: String, bodies: some Encodable) async throws -> ResponseModel {
         let endpoint = "/object/\(objectName)/composite"
-        return try await cxPost(endpoint: endpoint, data: bodies)
+        return try await cxPost(endpoint: endpoint, body: bodies)
     }
 }
