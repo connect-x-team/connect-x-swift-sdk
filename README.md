@@ -67,7 +67,7 @@ let eventBody: [String: Any] = [
     "cx_event": "YOUR_EVENT", 
     "cx_type": "YOUR_TYPE"
 ] // ... Other Activity Field
-ConnectXManager.shared.cxTracking(body: eventBody) { success, error in
+ConnectXManager.shared.cxTracking(body: eventBody) { success, error, response in
     if success {
         print("Tracking event sent successfully.")
     } else if let error = error {
@@ -113,7 +113,7 @@ ConnectXManager.shared.cxIdentify(
                 "weight": 55
             ]
         ]
-]) { success, error in
+]) { success, error, response in
     if success {
         print("Identify event sent successfully.")
     } else if let error = error {
@@ -156,7 +156,7 @@ ConnectXManager.shared.cxOpenTicket(body: [
             "customObjectB": ["cx_Name": "Test"]
         ]
     ]
-]) { success, error in
+]) { success, error, response in
     if success {
         print("Ticket opened successfully.")
     } else if let error = error {
@@ -176,9 +176,15 @@ ConnectXManager.shared.cxCreateRecord(objectName: objectName, bodies: [ // limit
         "cx_Name": cxName,
         "docId": docId // Pass null for create mode; pass a valid ID for edit mode
     ]
-]) { success, error in
-    if success {
+]) { success, error, response in
+    if success && response != nil {
         print("Record created successfully.")
+        print(response ?? "no response")
+        if let resultString = String(data: response!, encoding: .utf8) {
+            print("Response as String: \(resultString)")
+        } else {
+            print("Could not convert data to a UTF-8 string.")
+        }
     } else if let error = error {
         print("Error creating record: \(error)")
     }
