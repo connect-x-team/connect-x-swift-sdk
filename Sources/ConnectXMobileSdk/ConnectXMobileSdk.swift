@@ -258,57 +258,73 @@ public class ConnectXManager {
     }
 
     
-    private func cxPost(endpoint: String, data: Any, completion: @escaping (Result<Data, Error>) -> Void) {
-        
-        // 2. ใช้ Error Type ของเราเองเพื่อความชัดเจน
+    public func cxPost<T: Decodable>(
+        endpoint: String,
+        body: some Encodable,
+        completion: @escaping (Result<T, Error>) -> Void
+    ) {
+        // ---- 1. ตั้งค่า Request ----
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
-            completion(.failure(ConnectXError.invalidURL))
+            completion(.failure(NetworkError.invalidURL))
             return
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // หากมีการใช้ Token
         
+        // เข้ารหัส (Encode) ข้อมูล Body
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
+            request.httpBody = try JSONEncoder().encode(body)
         } catch {
-            completion(.failure(ConnectXError.serializationFailed(error)))
+            completion(.failure(NetworkError.encodingFailed(error)))
             return
         }
         
-        let task = URLSession.shared.dataTask(with: request) { responseData, response, error in
-            // --- ส่วนของการจัดการผลลัพธ์ที่แก้ไขใหม่ทั้งหมด ---
+        // ---- 2. สร้างและเริ่ม Network Task ----
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            //
+            // --- 3. จัดการผลลัพธ์ที่ได้รับกลับมา ---
+            // โค้ดในส่วนนี้จะทำงานบน Background Thread
+            //
             
-            // 3. ตรวจสอบ Network Error ก่อน
+            // เช็ค Network Error พื้นฐาน (เช่น ไม่มีอินเทอร์เน็ต)
             if let error = error {
-                completion(.failure(ConnectXError.networkRequestFailed(error)))
+                completion(.failure(NetworkError.networkRequestFailed(error)))
                 return
             }
             
-            // 4. ตรวจสอบว่า Response เป็น HTTP Response ที่ถูกต้อง
+            // เช็คว่า Response เป็น HTTP Response ที่ถูกต้อง
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(ConnectXError.invalidResponse))
+                completion(.failure(NetworkError.invalidResponse))
                 return
             }
             
-            // 5. ตรวจสอบ Status Code (สำคัญที่สุด!)
+            // เช็ค Status Code (ต้องเป็น 2xx)
             guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(ConnectXError.invalidStatusCode(httpResponse.statusCode)))
+                completion(.failure(NetworkError.invalidStatusCode(httpResponse.statusCode)))
                 return
             }
             
-            // 6. ตรวจสอบว่ามี Data กลับมาจริง
-            guard let responseData = responseData, !responseData.isEmpty else {
-                completion(.failure(ConnectXError.noData))
+            // เช็คว่ามี Data ส่งกลับมาจริง
+            guard let responseData = data else {
+                completion(.failure(NetworkError.noData))
                 return
             }
             
-            // 7. ถ้าทุกอย่างถูกต้อง ให้ส่งผลลัพธ์สำเร็จกลับไปพร้อมกับ Data
-            completion(.success(responseData))
+            // --- 4. ถอดรหัส (Decode) ข้อมูลและส่งผลลัพธ์สุดท้าย ---
+            do {
+                let decodedObject = try JSONDecoder().decode(T.self, from: responseData)
+                // สำเร็จ! ส่ง Object ที่ถอดรหัสแล้วกลับไป
+                completion(.success(decodedObject))
+            } catch {
+                // ล้มเหลวในการถอดรหัส JSON
+                completion(.failure(NetworkError.decodingFailed(error)))
+            }
         }
         
+        // สั่งให้ task เริ่มทำงาน
         task.resume()
     }
     
