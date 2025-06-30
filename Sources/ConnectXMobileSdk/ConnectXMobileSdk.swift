@@ -259,78 +259,37 @@ public class ConnectXManager {
     }
 
     
-    public func cxPost<T: Decodable>(
-        endpoint: String,
-        body: some Encodable,
-        completion: @escaping (Result<T, Error>) -> Void
-    ) {
-        // ---- 1. ตั้งค่า Request ----
+    private func cxPost(endpoint: String, data: Any, completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
-            completion(.failure(ConnectXError.invalidURL))
+            completion(false, NSError(domain: "ConnectXMobileSdk", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL."]))
             return
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // หากมีการใช้ Token
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        // เข้ารหัส (Encode) ข้อมูล Body
         do {
-            request.httpBody = try JSONEncoder().encode(body)
+            request.httpBody = try JSONSerialization.data(withJSONObject: data, options: [])
         } catch {
-            completion(.failure(ConnectXError.encodingFailed(error)))
+            completion(false, error)
             return
         }
         
-        // ---- 2. สร้างและเริ่ม Network Task ----
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            //
-            // --- 3. จัดการผลลัพธ์ที่ได้รับกลับมา ---
-            // โค้ดในส่วนนี้จะทำงานบน Background Thread
-            //
-            
-            // เช็ค Network Error พื้นฐาน (เช่น ไม่มีอินเทอร์เน็ต)
+        let task = URLSession.shared.dataTask(with: request) { _, response, error in
             if let error = error {
-                completion(.failure(ConnectXError.networkRequestFailed(error)))
+                completion(false, error)
                 return
             }
-            
-            // เช็คว่า Response เป็น HTTP Response ที่ถูกต้อง
-            guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(ConnectXError.invalidResponse))
-                return
-            }
-            
-            // เช็ค Status Code (ต้องเป็น 2xx)
-            guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(ConnectXError.invalidStatusCode(httpResponse.statusCode)))
-                return
-            }
-            
-            // เช็คว่ามี Data ส่งกลับมาจริง
-            guard let responseData = data else {
-                completion(.failure(ConnectXError.noData))
-                return
-            }
-            
-            // --- 4. ถอดรหัส (Decode) ข้อมูลและส่งผลลัพธ์สุดท้าย ---
-            do {
-                let decodedObject = try JSONDecoder().decode(T.self, from: responseData)
-                // สำเร็จ! ส่ง Object ที่ถอดรหัสแล้วกลับไป
-                completion(.success(decodedObject))
-            } catch {
-                // ล้มเหลวในการถอดรหัส JSON
-                completion(.failure(ConnectXError.decodingFailed(error)))
-            }
+            completion(true, nil, response)
         }
         
-        // สั่งให้ task เริ่มทำงาน
         task.resume()
     }
     
     // MARK: - Public API Methods
-    public func cxTracking(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
+    public func cxTracking(body: [String: Any], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
         
         getClientData { clientData in
             var requestBody = body
@@ -341,7 +300,7 @@ public class ConnectXManager {
         }
     }
     
-    public func cxIdentify(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
+    public func cxIdentify(body: [String: Any], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
         // Get tracking data from the body
         var trackingData = body["tracking"] as? [String: Any] ?? [:]
         
@@ -367,7 +326,7 @@ public class ConnectXManager {
     }
 
     
-    public func cxOpenTicket(body: [String: Any], completion: @escaping (Bool, Error?) -> Void) {
+    public func cxOpenTicket(body: [String: Any], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
         var ticketData = body
         var tracking: [String: Any] = ["organizeId": organizeId]
         if var ticket = ticketData["ticket"] as? [String: Any] {
@@ -383,8 +342,7 @@ public class ConnectXManager {
         }
     }
     
-    public func cxCreateRecord<ResponseModel: Decodable>(objectName: String, bodies: some Encodable) async throws -> ResponseModel {
-        let endpoint = "/object/\(objectName)/composite"
-        return try await cxPost(endpoint: endpoint, body: bodies)
-    }
+    public func cxCreateRecord(objectName: String, bodies: [[String: Any]], completion: @escaping (Bool, Error?, URLResponse?) -> Void) {
+       cxPost(endpoint: "/object/\(objectName)/composite", data: bodies, completion: completion)
+   }
 }
