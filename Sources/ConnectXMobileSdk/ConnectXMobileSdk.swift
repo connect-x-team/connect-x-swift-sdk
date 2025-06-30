@@ -7,11 +7,12 @@ import Network
 
 enum ConnectXError: Error {
     case invalidURL
-    case serializationFailed(Error)
+    case encodingFailed(Error)
     case networkRequestFailed(Error)
     case invalidResponse
     case invalidStatusCode(Int)
     case noData
+    case decodingFailed(Error)
 }
 
 public class ConnectXManager {
@@ -265,7 +266,7 @@ public class ConnectXManager {
     ) {
         // ---- 1. ตั้งค่า Request ----
         guard let url = URL(string: "\(apiDomain)\(endpoint)") else {
-            completion(.failure(NetworkError.invalidURL))
+            completion(.failure(ConnectXError.invalidURL))
             return
         }
         
@@ -278,7 +279,7 @@ public class ConnectXManager {
         do {
             request.httpBody = try JSONEncoder().encode(body)
         } catch {
-            completion(.failure(NetworkError.encodingFailed(error)))
+            completion(.failure(ConnectXError.encodingFailed(error)))
             return
         }
         
@@ -291,25 +292,25 @@ public class ConnectXManager {
             
             // เช็ค Network Error พื้นฐาน (เช่น ไม่มีอินเทอร์เน็ต)
             if let error = error {
-                completion(.failure(NetworkError.networkRequestFailed(error)))
+                completion(.failure(ConnectXError.networkRequestFailed(error)))
                 return
             }
             
             // เช็คว่า Response เป็น HTTP Response ที่ถูกต้อง
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(NetworkError.invalidResponse))
+                completion(.failure(ConnectXError.invalidResponse))
                 return
             }
             
             // เช็ค Status Code (ต้องเป็น 2xx)
             guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(NetworkError.invalidStatusCode(httpResponse.statusCode)))
+                completion(.failure(ConnectXError.invalidStatusCode(httpResponse.statusCode)))
                 return
             }
             
             // เช็คว่ามี Data ส่งกลับมาจริง
             guard let responseData = data else {
-                completion(.failure(NetworkError.noData))
+                completion(.failure(ConnectXError.noData))
                 return
             }
             
@@ -320,7 +321,7 @@ public class ConnectXManager {
                 completion(.success(decodedObject))
             } catch {
                 // ล้มเหลวในการถอดรหัส JSON
-                completion(.failure(NetworkError.decodingFailed(error)))
+                completion(.failure(ConnectXError.decodingFailed(error)))
             }
         }
         
